@@ -218,7 +218,16 @@ def _icon_star(cv):
     cv.outline(INK)
 
 
+def _icon_popsicle(cv):
+    cv.rect(5, 2, 6, 9, '#9ad6f2')
+    cv.rect(5, 2, 6, 3, '#f2a0b8')
+    cv.px(6, 3, '#ffffff')
+    cv.rect(7, 11, 2, 4, '#d9b98a')
+    cv.outline(INK)
+
+
 ICONS = {
+    14: _icon_popsicle,
     1: _icon_harmonica, 2: _icon_guitar, 3: _icon_letter, 4: _icon_note, 5: _icon_candy,
     6: _icon_recorder, 7: _icon_photo, 8: _icon_notebook, 9: _icon_pick, 10: _icon_lyrics,
     11: _icon_flower, 12: _icon_heart, 13: _icon_star,
@@ -392,6 +401,10 @@ def build(out_dir, icon_dir):
     for i in (1, 2, 3):
         blank(576, 576).save(os.path.join(out_dir, 'Weapons%d.png' % i))
     button_set().save(os.path.join(out_dir, 'ButtonSet.png'))
+    ld = Canvas(160, 40)
+    from textutil import draw_text as _dt
+    _dt(ld, 80, 12, '读取中……', '#d9b26a', center=True)
+    ld.image(2).save(os.path.join(out_dir, 'Loading.png'))
     go = Image.new('RGBA', (816, 624), (20, 18, 30, 255))
     go.save(os.path.join(out_dir, 'GameOver.png'))
     # app icon: a golden note on night blue

@@ -346,7 +346,19 @@ def lantern_glow():
     return _same_rows(fr)
 
 
+def big_piano():
+    """an upright piano as a single 2x2-tile event sprite (48x48 frames)"""
+    from objects_inside import piano
+    cv, _ = piano()
+    out = Canvas(144, 192)
+    for r in range(4):
+        for c in range(3):
+            out.paste(cv, c * 48, r * 48)
+    return out
+
+
 SPRITES = {
+    '!$Piano': big_piano,
     '!$Sparkle': sparkle, '!$Note': note, '!$WindChime': wind_chime, '!$GuitarCase': guitar_case,
     '!$Phone': phone, '!$Harmonica': lambda: item_glint(_harmonica), '!$Letter': lambda: item_glint(_envelope),
     '!$Recorder': lambda: item_glint(_recorder), '!$Bouquet': lambda: item_glint(_flowers_bouquet),
