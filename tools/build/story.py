@@ -790,7 +790,7 @@ def village_events(meta, pts):
         c.fade_bgs(2)
         c.fadeout()
         c.switch(S['CONCERT'], True)
-        c.tint((-68, -51, 0, 17), 1, False)
+        c.tint((-85, -68, 0, 34), 1, False)
         c.locate(PLAYER, 20, 16, UP)
         c.locate(duo, 21, 18, UP)
         c.wait(40)
