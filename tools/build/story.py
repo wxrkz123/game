@@ -28,7 +28,7 @@ def opening_events(meta, pts):
         c.narrate('这是一个关于“放不下”的故事。')
         c.wait(30)
         c.switch(S['PRO'], True)
-        c.var_script(V['CHAPTER'], "'序章 · 黄昏 · 七十八岁'")
+        c.plugin('LifeSong SetText %d 序章 · 黄昏 · 七十八岁' % V['CHAPTER'])
         c.nickname('清水小学的林老师')
         c.self_switch('A')
         c.transfer(M.OLD_HOME, 6, 7, UP, fade=0)
@@ -720,11 +720,9 @@ def village_events(meta, pts):
                             page(None, image=('!$Lantern', DOWN), cond=C('CH5'), step_anime=True, priority=2,
                                  through=True)])
 
-    ready_js = '$gameSwitches.value(%d) && $gameSwitches.value(%d) && $gameSwitches.value(%d)' % (
-        S['C5_XIAOHE'], S['C5_JIE'], S['C5_XIAOYU'])
-
     def check_ready(c):
-        c.if_script(ready_js, then=lambda c: c.switch(S['C5_READY'], True))
+        c.if_switch(S['C5_XIAOHE'], then=lambda c: c.if_switch(S['C5_JIE'], then=lambda c: c.if_switch(
+            S['C5_XIAOYU'], then=lambda c: c.switch(S['C5_READY'], True))))
 
     def xiaohe_c5(c):
         c.say('小禾', '林老师！', '今晚伴奏的乐队，全是您教过的学生。', '我们偷偷练了一个月呢！')
@@ -1324,12 +1322,10 @@ def city_events(meta, pts):
 
     ev.add('环境', 0, 15, [page(env, trigger=4, cond=C('CH3'))])
 
-    ready_js = '$gameSwitches.value(%d) && $gameSwitches.value(%d)' % (S['OWNER'], S['DEMO'])
-
     def check_jie(c):
-        c.if_script(ready_js, then=lambda c: (
+        c.if_switch(S['OWNER'], then=lambda c: c.if_switch(S['DEMO'], then=lambda c: (
             c.switch(S['JIE_READY'], True),
-            c.hint('（地铁口那边，好像有人在找你。）')))
+            c.hint('（地铁口那边，好像有人在找你。）'))))
 
     def owner_talk(c):
         c.say('老板娘', '小林，今天下班这么早？', '又去地铁口唱歌啊？')

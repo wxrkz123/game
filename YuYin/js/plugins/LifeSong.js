@@ -65,6 +65,9 @@
  *      音符可以带拍子：3:1.5,5:0.5,6,5   （冒号后是拍数，默认 1 拍）
  *      音符也可以写 v:20，表示播放变量 20 里保存的旋律。
  *
+ *  LifeSong SetText 变量编号 文字
+ *      把一段文字存进变量（例如菜单里显示的章节标题）。
+ *
  *  LifeSong Song 乐器 [每拍帧数]
  *      播放整首《余音》主旋律 + 变量里保存的玩家结尾（终章用）。
  * ============================================================================
@@ -277,6 +280,8 @@ var LifeSong = LifeSong || {};
                 mode: 'free', inst: LifeSong.instrument(args[1]), max: Number(args[2] || 0),
                 variable: Number(args[3] || 0), prompt: args.slice(4).join(' ')
             });
+        } else if (sub === 'settext') {
+            $gameVariables.setValue(Number(args[1]), args.slice(2).join(' '));
         } else if (sub === 'play') {
             var fpb = Number(args[3] || 24);
             var t = LifeSong.schedule(LifeSong.instrument(args[1]), LifeSong.parseNotes(args[2]), fpb);

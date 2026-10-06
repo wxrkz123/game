@@ -87,7 +87,7 @@ def goto_chapter(c, n, lines=()):
         c.narrate(ln)
     c.switch(S[PREV[n]], False)
     c.switch(S[ch['switch']], True)
-    c.var_script(V['CHAPTER'], "'%s'" % ch['title'])
+    c.plugin('LifeSong SetText %d %s' % (V['CHAPTER'], ch['title']))
     c.actor_image(ch['image'])
     c.nickname(ch['nick'])
     c.plugin('LifeSong Chapter %s' % ch['card'])
