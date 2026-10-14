@@ -1,11 +1,13 @@
 // Full automated playthrough of 《余音》 in headless Chromium.
-//   node tools/test/playthrough.js [--shots]
+//   node tools/test/playthrough.js [--shots] [--alt]
+//   --alt takes the other answer at the two choices that change later scenes
 const fs = require('fs');
 const path = require('path');
 const { serve, launch } = require('./harness');
 
 const OUT = path.join(__dirname, 'out');
 const SHOTS = process.argv.includes('--shots');
+const ALT = process.argv.includes('--alt');
 const PORT = 8765;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -14,6 +16,8 @@ const S = { PRO: 1, CH1: 2, CH2: 3, CH3: 4, CH4: 5, CH5: 6, SOUND_QUEST: 11, SOU
   GOT_GUITAR: 21, MOM_TALK: 22, JOINED_BAND: 23, SONG_WRITTEN: 24, FESTIVAL: 26, HOME_NIGHT: 27, PHONE: 31,
   OWNER: 32, DEMO: 33, JIE_BYE: 34, NOTEBOOK: 45, COLOR_BACK: 46, MET_XIAOHE: 47, TEACH: 48, C5_READY: 56,
   CONCERT: 55, C5_GRAVE: 54 };
+// variables: the two story choices, and the player's last phrase as shown in the credits
+const V = { CH2_CHOICE: 12, CH3_CHOICE: 13, FINAL_TEXT: 21 };
 
 const STEPS = [
   ['newgame'],
@@ -30,16 +34,18 @@ const STEPS = [
   ['mistakes', 1],
   ['go', '爷爷'], ['idle'], ['expectSwitch', S.CH2], ['expectMap', 4], ['shot', '04_ch2_home'],
   ['go', '包裹'], ['idle'], ['expectSwitch', S.GOT_GUITAR],
-  ['go', '妈妈'], ['idle'], ['expectSwitch', S.MOM_TALK],
+  ['choices', [ALT ? 1 : 0]],
+  ['go', '妈妈'], ['idle'], ['expectSwitch', S.MOM_TALK], ['expectVar', [V.CH2_CHOICE, ALT ? 2 : 1]],
   ['go', '家门'], ['idle'], ['expectMap', 5], ['shot', '05_ch2_school'],
   ['go', '阿杰'], ['idle'], ['expectSwitch', S.JOINED_BAND],
   ['choices', [1]],
   ['go', '教学楼大门'], ['idle'], ['expectSwitch', S.HOME_NIGHT], ['expectMap', 4], ['shot', '06_ch2_night'],
   ['go', '包裹'], ['idle'], ['expectSwitch', S.CH3], ['expectMap', 9], ['shot', '07_ch3_basement'],
+  ['expectLog', ALT ? '你说你真的很喜欢' : '不用再藏在床底下'],
   ['go', '电话'], ['idle'], ['expectSwitch', S.PHONE],
   ['go', '门'], ['idle'], ['expectMap', 8], ['shot', '08_ch3_city'],
-  ['choices', [1]],
-  ['go', '老板娘'], ['idle'], ['expectSwitch', S.OWNER],
+  ['choices', [ALT ? 0 : 1]],
+  ['go', '老板娘'], ['idle'], ['expectSwitch', S.OWNER], ['expectVar', [V.CH3_CHOICE, ALT ? 1 : 2]],
   ['go', '唱片公司'], ['idle'], ['expectSwitch', S.DEMO],
   ['go', '阿杰'], ['idle'], ['expectSwitch', S.JIE_BYE],
   ['go', '卖唱的地方'], ['idle'], ['expectSwitch', S.CH4], ['expectMap', 2], ['shot', '09_ch4_village_gray'],
@@ -51,11 +57,15 @@ const STEPS = [
   ['go', '校长'], ['idle'], ['expectSwitch', S.CH5], ['expectMap', 1], ['shot', '12_ch5_home'],
   ['go', '门'], ['idle'], ['expectMap', 2], ['shot', '13_ch5_village_evening'],
   ['go', '爷爷的墓'], ['idle'], ['expectSwitch', S.C5_GRAVE],
+  ['expectLog', ALT ? '你看，我吃了一辈子呢' : '其实你早就知道了吧'],
   ['go', '钢琴'], ['idle'],
   ['go', '小禾（大人）'], ['idle'],
   ['go', '阿杰（老年）'], ['idle'],
+  ['expectLog', ALT ? '原来音音也会累啊' : '傻的是我'],
   ['go', '小雨（大人）'], ['idle'], ['expectSwitch', S.C5_READY],
   ['go', '钢琴'], ['title'],
+  ['expectVar', [V.FINAL_TEXT, '5 6 1 6 5']],
+  ['expectLog', ['credits ', '作曲　你', '\\V[' + V.FINAL_TEXT + ']']],
 ];
 
 async function main() {
@@ -134,6 +144,15 @@ async function main() {
       } else if (op === 'expectSwitch') {
         const [v] = await page.evaluate((i) => Bot.switches([i]), arg);
         if (!v) throw new Error('switch ' + arg + ' is off');
+      } else if (op === 'expectVar') {
+        const [id, want] = arg;
+        const got = await page.evaluate((i) => $gameVariables.value(i), id);
+        if (got !== want) throw new Error('variable ' + id + ' is ' + JSON.stringify(got) + ', expected ' + JSON.stringify(want));
+      } else if (op === 'expectLog') {
+        // arg: text, or a list of texts that must all be in the same message
+        const parts = [].concat(arg);
+        const log = await page.evaluate(() => Bot.log);
+        if (!log.some((l) => parts.every((p) => l.includes(p)))) throw new Error('never shown: ' + parts.join(' … '));
       } else if (op === 'choices') {
         await page.evaluate((c) => { Bot.choices = c.slice(); }, arg);
       } else if (op === 'mistakes') {
@@ -153,9 +172,13 @@ async function main() {
         await page.evaluate(() => { SceneManager.goto(Scene_Map); });
         await waitIdle();
       } else if (op === 'title') {
+        let creditShots = 0;
         for (let i = 0; i < 6000; i++) {
           const s = await st();
           if (s.scene === 'Scene_Title') break;
+          if (SHOTS && s.credits && creditShots < 8 && i % 10 === 0) {
+            await page.screenshot({ path: path.join(OUT, 'credits_' + creditShots++ + '.png') });
+          }
           if (i % 50 === 0) console.log('  ...', JSON.stringify(s));
           await sleep(100);
         }
@@ -171,7 +194,7 @@ async function main() {
     }
   }
   const log = await page.evaluate(() => Bot.log).catch(() => []);
-  console.log('\nbot log:\n  ' + log.join('\n  '));
+  console.log('\nbot log:\n  ' + log.filter((l) => !l.startsWith('text ')).join('\n  '));
   console.log('\nerrors (' + errors.length + '):\n  ' + errors.slice(0, 30).join('\n  '));
   await browser.close();
   server.close();

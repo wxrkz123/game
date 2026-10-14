@@ -610,6 +610,11 @@ def village_events(meta, pts):
             c.text('我把一束小花放在墓碑前。'),
             c.se('YY_Paper', 60),
             say_me(c, '爷爷，妈。', '今天晚上，我要把那首歌唱完了。'),
+            c.if_var(V['CH2_CHOICE'], '==', 1,
+                     then=lambda c: say_me(c, '妈，十六岁那年，你让我把吉他收起来。', '我说了“好”，',
+                                           '转身就把它藏到了床底下。', '……其实你早就知道了吧？'),
+                     else_=lambda c: say_me(c, '妈，十六岁那年，我跟你顶嘴，', '说我真的很喜欢。',
+                                            '你说，喜欢能当饭吃吗？', '……你看，我吃了一辈子呢。')),
             say_me(c, '妈，你还记得吗？', '后来我的每一场演出，你都来了。', '总是坐在最后一排。'),
             say_me(c, '这一次……', '你们俩，坐在第一排好不好？'),
             c.balloon(PLAYER, 'flower'),
@@ -738,6 +743,14 @@ def village_events(meta, pts):
         say_me(c, '阿杰？！你的头发……全白了。')
         c.say('阿杰', '你的也是嘛。')
         c.say('阿杰', '退休以后，我又把吉他捡起来了。', '手指头不灵活了，弹得磕磕绊绊的。')
+        c.if_var(V['CH3_CHOICE'], '==', 1,
+                 then=lambda c: (
+                     c.say('阿杰', '听说那几年，你也去公司上过班？', '白天上班，晚上还跑去地铁口唱。'),
+                     c.say('阿杰', '我那时候想，原来音音也会累啊。', '……可你一天都没停下来。'),
+                     c.say('阿杰', '我呢，一停就是四十年。')),
+                 else_=lambda c: (
+                     c.say('阿杰', '我走了以后，你一个人在地铁口，', '又唱了好多年吧？'),
+                     c.say('阿杰', '我那时候想，这丫头真傻。', '……现在才知道，傻的是我。')))
         c.say('阿杰', '可是这回……我不打算再放下了。')
         c.if_item(I['PICK'], then=lambda c: (
             c.say('阿杰', '对了，那个拨片，还在吗？'),
@@ -812,6 +825,9 @@ def village_events(meta, pts):
         say_me(c, '现在我知道了。', '最后一句，不用写得多好听，', '只要是自己的声音就好。')
         c.hint('（用你自己的旋律，为这首歌写下最后一句。）')
         c.plugin('LifeSong Free Pno 8 %d 最后一句 · 你的声音' % V['FINAL'])
+        # "5,6,8" -> "5 6 1" (8 is high do, written as 1 like the other phrases)
+        c.var_script(V['FINAL_TEXT'], "String($gameVariables.value(%d)).split(',')"
+                                      ".map(function(n) { return n === '8' ? '1' : n; }).join(' ')" % V['FINAL'])
         say_me(c, '……这就是，我这一辈子的歌。')
         c.text('她从第一句开始，把整首歌又弹了一遍。')
         c.plugin('LifeSong Song Pno 20 %d' % V['FINAL'])
@@ -840,6 +856,8 @@ def village_events(meta, pts):
         c.wait(60)
         c.scroll(['', '《余　音》', '', '—— 一生所爱 ——', '', '', '林音（1990 — ）',
                   '她这一辈子，一直在唱同一首歌。', '', '', '———————————', '',
+                  '最后一句', '', '\\C[6]\\V[%d]\\C[0]' % V['FINAL_TEXT'], '', '作曲　你', '', '',
+                  '———————————', '',
                   '故事　美术　音乐　程序', '由 Claude 协助制作', '',
                   '引擎　RPG Maker MV Corescript（MIT 许可）', '字体　Fusion Pixel Font（SIL OFL 1.1）', '',
                   '———————————', '', '', '谢谢你，陪她走完这一生。', '', '愿你也有一样东西，',
@@ -910,7 +928,11 @@ def apartment_events(meta, pts):
     def night_note(c):
         c.text('桌上放着一副新的吉他弦。', '下面压着一张字条。')
         c.se('YY_Paper', 80)
-        c.text('\\C[6]『琴弦旧了，换一副吧。', '　　　　　　　　——妈』\\C[0]')
+        c.if_var(V['CH2_CHOICE'], '==', 1,
+                 then=lambda c: c.text('\\C[6]『琴弦旧了，换一副吧。', '以后，不用再藏在床底下了。',
+                                       '　　　　　　　　——妈』\\C[0]'),
+                 else_=lambda c: c.text('\\C[6]『琴弦旧了，换一副吧。', '你说你真的很喜欢。妈听见了。',
+                                        '　　　　　　　　——妈』\\C[0]'))
         c.item(I['MOM_NOTE'], 1)
         c.balloon(PLAYER, 'heart')
         say_me(c, '……妈。')

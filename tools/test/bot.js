@@ -68,6 +68,12 @@
         return;
       }
       if (cw) cw._botChosen = false;
+      if ($gameMessage.isBusy() && $gameMessage.allText() !== Bot.lastText) {
+        // remember every message shown, so the test can check which branch of the story played
+        Bot.lastText = $gameMessage.allText();
+        Bot.log.push(($gameMessage.scrollMode() ? 'credits ' : 'text ') +
+          Bot.lastText.replace(/\n/g, ' '));
+      }
       if ($gameMessage.isBusy() && Bot.frame % 4 === 0) {
         press('ok');
       }
@@ -144,6 +150,7 @@
       dest: $gameTemp ? $gameTemp.isDestinationValid() : false,
       minigames: Bot.minigames,
       cards: Bot.cards,
+      credits: !!(s && s._scrollTextWindow && s._scrollTextWindow.visible),
     };
   };
 

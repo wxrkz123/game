@@ -15,6 +15,7 @@ ROOT = os.path.abspath(os.path.join(HERE, '..', '..', 'YuYin'))
 import build_tilesets
 import system_art
 import title_art
+import faces
 from chars import sheet
 from cast import CAST
 from object_sprites import SPRITES
@@ -28,17 +29,21 @@ def main():
         sheet(spec).save(os.path.join(chars_dir, name + '.png'))
     for name, fn in SPRITES.items():
         fn().save(os.path.join(chars_dir, name + '.png'))
+    faces_dir = os.path.join(ROOT, 'img', 'faces')
+    os.makedirs(faces_dir, exist_ok=True)
+    faces.build(faces_dir)
     system_art.build(os.path.join(ROOT, 'img', 'system'), os.path.join(ROOT, 'icon'))
     title_art.build(ROOT, sys.argv[1] if len(sys.argv) > 1 else None)
     # empty folders the engine / editor expect
-    for d in ('animations', 'battlebacks1', 'battlebacks2', 'enemies', 'faces', 'parallaxes',
+    for d in ('animations', 'battlebacks1', 'battlebacks2', 'enemies', 'parallaxes',
               'pictures', 'sv_actors', 'sv_enemies'):
         p = os.path.join(ROOT, 'img', d)
         os.makedirs(p, exist_ok=True)
         keep = os.path.join(p, '.gitkeep')
         if not os.listdir(p):
             open(keep, 'w').close()
-    print('art done:', len(CAST), 'characters,', len(SPRITES), 'object sprites')
+    print('art done:', len(CAST), 'characters,', len(SPRITES), 'object sprites,',
+          len(faces.SHEETS), 'face sheets')
 
 
 if __name__ == '__main__':
