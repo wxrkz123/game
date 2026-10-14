@@ -1,6 +1,13 @@
 """Shared constants and helpers for the 《余音》 story script."""
+import os
+import sys
+
+import mvdata
 from mvdata import Cmd, page, event, PLAYER, THIS, DOWN, LEFT, RIGHT, UP
 import maps as M
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'art'))
+from face_sheets import face_index
 
 # ---------------------------------------------------------------------------
 # switches
@@ -37,9 +44,9 @@ SWITCH_NAMES = {
 # ---------------------------------------------------------------------------
 # variables
 # ---------------------------------------------------------------------------
-V = dict(CHAPTER=1, FRAGMENTS=2, SOUNDS=3, RESULT=11, CH2_CHOICE=12, CH3_CHOICE=13, FINAL=20)
+V = dict(CHAPTER=1, FRAGMENTS=2, SOUNDS=3, RESULT=11, CH2_CHOICE=12, CH3_CHOICE=13, FINAL=20, FINAL_TEXT=21)
 VAR_NAMES = {1: '章节标题', 2: '旋律碎片数', 3: '夏天的声音', 11: '小游戏错误次数', 12: '第二章选择',
-             13: '第三章选择', 20: '最后一句（玩家的旋律）'}
+             13: '第三章选择', 20: '最后一句（玩家的旋律）', 21: '最后一句（简谱文字）'}
 
 # ---------------------------------------------------------------------------
 # items
@@ -51,6 +58,64 @@ I = dict(HARMONICA=1, GUITAR=2, GRANDPA_NOTE=3, MOM_NOTE=4, PICK=5, CANDY=6, REC
 CE = dict(HARMONICA=1, GUITAR=2, POPSICLE=3, FRAGMENT=4)
 
 ME = '\\N[1]'   # the heroine's name in messages
+
+# ---------------------------------------------------------------------------
+# dialogue portraits: speaker -> sprite whose portrait to show
+# (a dict picks by chapter; speakers not listed get no portrait)
+# ---------------------------------------------------------------------------
+YIN_BY_CHAPTER = {'PRO': '$Yin_Old', 'CH1': '$Yin_Child', 'CH2': '$Yin_Teen', 'CH3': '$Yin_Adult',
+                  'CH4': '$Yin_Middle', 'CH5': '$Yin_Old'}
+FACES = {
+    ME: YIN_BY_CHAPTER,
+    '爷爷': '$Grandpa',
+    '妈妈': '$Mom',
+    '阿杰': {'CH2': '$Jie_Teen', 'CH3': '$Jie_Adult', 'CH5': '$Jie_Old'},
+    '朵朵': '$Duoduo',
+    '王老师': '$Teacher_Wang',
+    '老板娘': '$Cafe_Owner',
+    '前台': '$Receptionist',
+    '小女孩': {'CH3': '$Xiaoyu_Child', 'CH4': '$Xiaohe_Child'},
+    '小女孩的妈妈': '$Xiaoyu_Mom',
+    '小雨': {'CH3': '$Xiaoyu_Child', 'CH5': '$Xiaoyu_Adult'},
+    '陌生的女士': '$Xiaoyu_Adult',
+    '小禾': {'CH4': '$Xiaohe_Child', 'CH5': '$Xiaohe_Adult'},
+    '李奶奶': '$Granny_Li',
+    '王伯': '$Farmer',
+    '渔夫叔叔': '$Fisherman',
+    '卖冰棍的': '$Vendor',
+    '张婶': '$Villager_Woman',
+    '校长': '$Villager_Woman',
+    '村民': '$Villager_Woman',
+    '阿毛': '$Kid_Boy',
+    '小花': '$Kid_Girl',
+}
+CHAPTER_OF_SWITCH = {1: 'PRO', 2: 'CH1', 3: 'CH2', 4: 'CH3', 5: 'CH4', 6: 'CH5'}
+# chapter to assume for a page without a chapter condition (set per map by build_data)
+DEFAULT_CHAPTER = {'name': None}
+
+
+def current_chapter():
+    for sid in reversed(mvdata.CURRENT['switches']):
+        if sid in CHAPTER_OF_SWITCH:
+            return CHAPTER_OF_SWITCH[sid]
+    cond = mvdata.CURRENT['cond']
+    for key in ('switch1', 'switch2'):
+        if cond.get(key) in CHAPTER_OF_SWITCH:
+            return CHAPTER_OF_SWITCH[cond[key]]
+    return DEFAULT_CHAPTER['name']
+
+
+def speaker_face(name):
+    sprite = FACES.get(name)
+    if isinstance(sprite, dict):
+        chapter = current_chapter()
+        if chapter not in sprite:
+            raise ValueError('no portrait of %s for chapter %s' % (name, chapter))
+        sprite = sprite[chapter]
+    return face_index(sprite) if sprite else None
+
+
+Cmd.face_for = staticmethod(speaker_face)
 
 # the four learned phrases (jianpu, 8 = high do)
 P1 = '3,5,6,5,3,2,1'
@@ -88,7 +153,7 @@ def goto_chapter(c, n, lines=()):
     c.switch(S[PREV[n]], False)
     c.switch(S[ch['switch']], True)
     c.plugin('LifeSong SetText %d %s' % (V['CHAPTER'], ch['title']))
-    c.actor_image(ch['image'])
+    c.actor_image(ch['image'], 0, *face_index(ch['image']))
     c.nickname(ch['nick'])
     c.plugin('LifeSong Chapter %s' % ch['card'])
     m, x, y, d = ch['to']

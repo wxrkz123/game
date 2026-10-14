@@ -17,7 +17,7 @@ sys.path.insert(0, HERE)
 import maps as M
 import story
 from mvdata import build, Cmd, map_json, audio
-from story_core import S, V, I, CE, SWITCH_NAMES, VAR_NAMES
+from story_core import S, V, I, CE, SWITCH_NAMES, VAR_NAMES, DEFAULT_CHAPTER, face_index
 from mapgen import META, TILESETS
 
 ROOT = os.path.abspath(os.path.join(HERE, '..', '..', 'YuYin'))
@@ -36,7 +36,8 @@ def dump(name, obj):
 def actors():
     return [None, {
         'id': 1, 'battlerName': '', 'characterIndex': 0, 'characterName': '$Yin_Old', 'classId': 1,
-        'equips': [0, 0, 0, 0, 0], 'faceIndex': 0, 'faceName': '', 'traits': [], 'initialLevel': 1,
+        'equips': [0, 0, 0, 0, 0], 'faceIndex': face_index('$Yin_Old')[1],
+        'faceName': face_index('$Yin_Old')[0], 'traits': [], 'initialLevel': 1,
         'maxLevel': 99, 'name': '林音', 'nickname': '清水小学的林老师', 'note': '',
         'profile': '一辈子都放不下音乐的人。',
     }]
@@ -203,6 +204,11 @@ MAP_DEFS = [
 ]
 
 
+# the chapter of a map used in one chapter only (pages there may leave the chapter switch out)
+MAP_CHAPTER = {M.OLD_HOME: 'PRO', M.APARTMENT: 'CH2', M.SCHOOL: 'CH2', M.MUSIC_ROOM: 'CH2', M.HALL: 'CH2',
+               M.CITY: 'CH3', M.BASEMENT: 'CH3'}
+
+
 def opening_map():
     from mapgen import MapPainter
     m = MapPainter(17, 13, 'inside')
@@ -216,6 +222,7 @@ def build_maps():
     for mid, name, disp, layout, evfn in MAP_DEFS:
         m, pts = layout()
         meta = META['outside' if m.tileset_id == 1 else 'inside']
+        DEFAULT_CHAPTER['name'] = MAP_CHAPTER.get(mid)
         events = evfn(meta, pts)
         mp = map_json(m.w, m.h, m.tileset_id, m.data(), events, display_name=disp)
         dump('Map%03d.json' % mid, mp)
@@ -223,6 +230,7 @@ def build_maps():
                       'scrollX': m.w * 24, 'scrollY': m.h * 24})
         order += 1
     m = opening_map()
+    DEFAULT_CHAPTER['name'] = 'PRO'
     events = story.opening_events(META['inside'], {})
     dump('Map010.json', map_json(m.w, m.h, m.tileset_id, m.data(), events, display_name=''))
     infos.append({'id': 10, 'expanded': False, 'name': '00 开场（黑屏）', 'order': 0, 'parentId': 0,

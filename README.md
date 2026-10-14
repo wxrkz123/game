@@ -21,8 +21,9 @@
 
 - 5 个章节 + 序章，约 30～40 分钟，无战斗
 - 12 次旋律小游戏：跟着弹、用眼睛听、自由创作
-- 全部美术（像素图块、33 个角色、界面）和全部音乐（11 首编曲 + 音效）都是本项目原创，由 `tools/` 里的程序生成
-- 带名字框的对话、章节标题卡、记录人生的菜单
+- 全部美术（像素图块、33 个角色、25 个对话头像、界面）和全部音乐（11 首编曲 + 音效）都是本项目原创，由 `tools/` 里的程序生成
+- 带名字框和头像的对话（主角的头像随年龄变化）、章节标题卡、记录人生的菜单
+- 第二、三章的选择会改变后面的台词；你在终章写下的最后一句，会出现在片尾字幕里
 
 ## 怎么玩 / 怎么改
 
@@ -51,7 +52,7 @@ YuYin/                      RPG Maker MV 项目（用编辑器打开这里的 Ga
   js/plugins/LifeSong.js    本游戏的插件（旋律小游戏、标题卡、名字框、菜单）
 docs/                       策划案、剧本、新手教程、截图
 tools/                      生成素材和数据的程序（进阶，可忽略）
-  art/      像素画生成（图块、角色、界面、标题）
+  art/      像素画生成（图块、角色、头像、界面、标题）
   audio/    音乐合成（合成器 + 简谱编曲）
   build/    地图与剧情事件 → data/*.json
   test/     静态检查 + 无头浏览器自动通关测试
@@ -68,6 +69,7 @@ python3 tools/build/build_data.py       # 地图、事件、数据库
 python3 tools/build/export_script.py    # 导出 docs/剧本.md
 python3 tools/test/validate.py          # 静态检查：事件结构、文件引用、可达性
 node tools/test/playthrough.js --shots  # 无头 Chromium 自动通关（需要 playwright）
+node tools/test/playthrough.js --alt    # 同上，但两个关键选择都选另一边
 ```
 
 ## 致谢与许可

@@ -23,6 +23,7 @@ def load(name):
 
 tilesets = load('Tilesets.json')
 system = load('System.json')
+actors = load('Actors.json')
 infos = load('MapInfos.json')
 maps = {i['id']: load('Map%03d.json' % i['id']) for i in infos if i}
 
@@ -93,8 +94,13 @@ for where, lst in all_commands():
         c, p = cmd['code'], cmd['parameters']
         if c in (241, 245, 249, 250):
             need({241: 'bgm', 245: 'bgs', 249: 'me', 250: 'se'}[c], p[0]['name'])
+        if c == 101:
+            need('faces', p[0])
+            if p[0] and not 0 <= p[1] < 8:
+                problems.append('%s: face index %s out of range' % (where, p[1]))
         if c == 322:
             need('characters', p[1])
+            need('faces', p[3])
         if c == 231:
             need('pictures', p[1])
         if c == 356:
@@ -112,6 +118,10 @@ for mid, mp in maps.items():
         if ev:
             for pg in ev['pages']:
                 need('characters', pg['image']['characterName'])
+for a in actors:
+    if a:
+        need('characters', a['characterName'])
+        need('faces', a['faceName'])
 for s in system['sounds']:
     need('se', s['name'])
 need('bgm', system['titleBgm']['name'])

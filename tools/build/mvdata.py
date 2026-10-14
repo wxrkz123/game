@@ -20,6 +20,10 @@ MV = dict(down=1, left=2, right=3, up=4, dl=5, dr=6, ul=7, ur=8, random=9, towar
           transparent_on=39, transparent_off=40, image=41, opacity=42, se=44, script=45)
 
 MAX_LINE = 26   # CJK characters per message line (24px font, 780px window)
+FACE_LINE = 22  # ... when a 144px portrait takes the left of the window
+
+# conditions of the event page being built, so dialogue can depend on the story state
+CURRENT = {'cond': {}, 'switches': []}
 
 
 def audio(name, volume=90, pitch=100, pan=0):
@@ -68,11 +72,16 @@ def wrap(line, width=MAX_LINE):
             out.append(cur)
             cur = ''
     if cur:
-        out.append(cur)
+        if out and all(ch in '，。！？…、；：）」』—~ ' for ch in cur):
+            out[-1] += cur      # never leave closing punctuation alone on a line
+        else:
+            out.append(cur)
     return out
 
 
 class Cmd:
+    face_for = None   # optional hook: speaker name -> (face file, face index)
+
     def __init__(self, indent=0):
         self.list = []
         self.indent = indent
@@ -85,14 +94,17 @@ class Cmd:
     def _block(self, fn):
         """run fn one indent deeper and close the block with the editor's code-0 line."""
         self.indent += 1
+        self._block_body(fn)
+        self.add(0, [])
+        self.indent -= 1
+
+    def _block_body(self, fn):
         if fn:
             if callable(fn):
                 fn(self)
             else:
                 for f in fn:
                     f(self)
-        self.add(0, [])
-        self.indent -= 1
 
     def end(self):
         self.list.append({'code': 0, 'indent': self.indent, 'parameters': []})
@@ -112,11 +124,15 @@ class Cmd:
 
     def say(self, name, *lines, **kw):
         lines = list(lines)
-        first = '【%s】%s' % (name, lines[0] if lines else '')
+        if 'face' not in kw and Cmd.face_for:
+            kw['face'], kw['face_index'] = Cmd.face_for(name) or ('', 0)
+        width = FACE_LINE if kw.get('face') else MAX_LINE
         flat = []
-        for part in [first] + lines[1:]:
+        for part in (lines or ['']):
             for p in str(part).split('\n'):
-                flat.extend(wrap(p))
+                flat.extend(wrap(p, width))
+        # the plugin turns the 【name】 tag into the name box, so it takes no room in the line
+        flat[0] = '【%s】%s' % (name, flat[0])
         # keep the speaker tag on every page
         pages = [flat[i:i + 4] for i in range(0, len(flat), 4)]
         for k, page in enumerate(pages):
@@ -164,7 +180,16 @@ class Cmd:
         return self
 
     def if_switch(self, sid, on=True, then=None, else_=None):
-        return self._if([0, sid, 0 if on else 1], then, else_)
+        if not on or then is None:
+            return self._if([0, sid, 0 if on else 1], then, else_)
+        # inside the branch the switch is known to be on
+        def then_on(c):
+            CURRENT['switches'].append(sid)
+            try:
+                c._block_body(then)
+            finally:
+                CURRENT['switches'].pop()
+        return self._if([0, sid, 0], then_on, else_)
 
     def if_var(self, vid, op, value, then=None, else_=None):
         ops = {'==': 0, '>=': 1, '<=': 2, '>': 3, '<': 4, '!=': 5}
@@ -381,6 +406,7 @@ def page(commands=None, image=None, trigger=0, priority=1, cond=None, move_type=
     if image is None and commands is None and trigger in (0, 1, 2):
         priority = 0          # an empty placeholder page must never block the player
     var = cond.get('var')
+    CURRENT['cond'] = cond
     mr = {'list': [{'code': 0, 'parameters': []}], 'repeat': True, 'skippable': False, 'wait': False}
     if route:
         lst = []
