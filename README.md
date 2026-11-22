@@ -5,6 +5,10 @@
 > 喜欢一样东西，不用谁来批准，也不用急着它能换来什么。
 > 你只要一直喜欢下去，它就会一直陪着你。
 
+**▶ 在线试玩：<https://wxrkz123.github.io/game/>**（电脑或手机浏览器打开，点一下画面开始）
+
+**⬇ Windows 电脑版：<https://github.com/wxrkz123/game/releases/latest>**（下载 `YuYin-Windows-x64.zip`，解压后双击 `YuYin.exe`）
+
 ![标题画面](docs/images/title.png)
 
 ## 这是什么
@@ -35,7 +39,7 @@
 **完全没用过 RPG Maker？** 请看 👉 [docs/新手教程.md](docs/新手教程.md)
 
 最快的方式：
-1. 安装 RPG Maker MV（Steam），菜单 **文件 → 打开项目**，选择 `YuYin/Game.rpgproject`。
+1. 下载本仓库（页面上绿色的 **Code → Download ZIP**），解压；安装 RPG Maker MV（Steam），菜单 **文件 → 打开项目**，选择 `YuYin/Game.rpgproject`。
 2. 按 **Ctrl + R** 试玩。方向键/鼠标移动，Z/回车对话，**数字键 1～8 弹琴**。
 
 不装 RPG Maker 也能玩：在本文件夹运行 `python -m http.server --directory YuYin 8080`，然后用浏览器打开 <http://localhost:8080>。
@@ -61,7 +65,8 @@ tools/                      生成素材和数据的程序（进阶，可忽略�
   art/      像素画生成（图块、角色、头像、界面、标题）
   audio/    音乐合成（合成器 + 简谱编曲）
   build/    地图与剧情事件 → data/*.json
-  test/     静态检查 + 无头浏览器自动通关测试
+  test/     静态检查 + 无头浏览器自动通关测试（nw_runner.js：在 Windows 版里自动通关）
+  windows/  打包 Windows 电脑版（配合 .github/workflows/windows.yml）
 ```
 
 > ⚠️ 在 RPG Maker 编辑器里改过游戏以后，**不要再运行** `tools/build/build_data.py`，它会覆盖你的修改。
@@ -76,10 +81,20 @@ python3 tools/build/export_script.py    # 导出 docs/剧本.md
 python3 tools/test/validate.py          # 静态检查：事件结构、文件引用、可达性
 node tools/test/playthrough.js --shots  # 无头 Chromium 自动通关（需要 playwright）
 node tools/test/playthrough.js --alt    # 同上，但两个关键选择都选另一边
+node tools/windows/assemble.js build/YuYin   # 组装 Windows 版的游戏部分（NW.js 由 windows.yml 下载）
 ```
+
+### 网页版和电脑版是怎么发布的
+- **网页版**：`YuYin/` 里的文件有改动、推送到默认分支后，`.github/workflows/pages.yml` 会自动把 `YuYin/` 发布到
+  GitHub Pages（<https://wxrkz123.github.io/game/>）。第一次要在仓库 **Settings → Pages** 里把 Source 选成 **GitHub Actions**。
+- **Windows 电脑版**：在仓库的 **Actions** 页面，左边选「打包 Windows 电脑版」→ 右边 **Run workflow**，填一个新的版本号（比如 `v1.0.1`）。
+  `.github/workflows/windows.yml` 会把游戏装进 NW.js（RPG Maker MV 1.6 部署时用的同一版本）做成 `YuYin.exe`，
+  在 Windows 上把两条剧情分支都自动玩到结局、测试存档读档（`tools/test/nw_runner.js`），
+  通过后把 `YuYin-Windows-x64.zip` 放到 [Releases](https://github.com/wxrkz123/game/releases) 页面。
 
 ## 致谢与许可
 
 - 引擎脚本：[RPG Maker MV Corescript](https://github.com/rpgtkoolmv/corescript)（MIT，见 `YuYin/js/LICENSE-corescript.txt`）
 - 字体：[Fusion Pixel Font](https://github.com/TakWolf/fusion-pixel-font)（SIL OFL 1.1，见 `YuYin/fonts/FusionPixel-LICENSE-OFL.txt`）
+- Windows 版运行环境：[NW.js](https://nwjs.io/)（MIT，许可见安装包里的 `credits.html`）
 - 剧本、像素美术、音乐、插件：本项目原创

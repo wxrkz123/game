@@ -4,3 +4,4 @@ __pycache__/
 /tools/test/node_modules/
 .DS_Store
 Thumbs.db
+/build/

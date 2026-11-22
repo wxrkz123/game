@@ -407,7 +407,13 @@ def build(out_dir, icon_dir):
     ld.image(2).save(os.path.join(out_dir, 'Loading.png'))
     go = Image.new('RGBA', (816, 624), (20, 18, 30, 255))
     go.save(os.path.join(out_dir, 'GameOver.png'))
-    # app icon: a golden note on night blue
+    ic = app_icon()
+    ic.image(8).save(os.path.join(icon_dir, 'icon.png'))
+    save_ico(ic, os.path.join(icon_dir, 'icon.ico'))
+
+
+def app_icon():
+    """The app icon: a golden note on night blue (32x32 logical)."""
     ic = Canvas(32, 32)
     ic.round_rect(0, 0, 32, 32, '#2a2740', r=6)
     big = Canvas(16, 16)
@@ -417,4 +423,12 @@ def build(out_dir, icon_dir):
             c = big.get(x, y)
             if c[3]:
                 ic.rect(x * 2 - 0, y * 2 - 0, 2, 2, c)
-    ic.image(8).save(os.path.join(icon_dir, 'icon.png'))
+    return ic
+
+
+def save_ico(ic, path):
+    """Windows icon for the desktop build (YuYin.exe): crisp at 32/64/128/256, smoothed at 16/24/48."""
+    base = ic.image(1)
+    imgs = [base.resize((s, s), Image.NEAREST if s % 32 == 0 else Image.LANCZOS)
+            for s in (256, 128, 64, 48, 32, 24, 16)]
+    imgs[0].save(path, format='ICO', sizes=[im.size for im in imgs], append_images=imgs[1:])

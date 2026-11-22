@@ -1,0 +1,128 @@
+name: 打包 Windows 电脑版
+
+# 两种启动方式：
+#   · 仓库的 Actions 页面 → 左边选「打包 Windows 电脑版」→ Run workflow，填一个新的版本号（比如 v1.0.1）；
+#   · 或者推送一个 v 开头的标签。
+# 它会：
+#   1. 下载 NW.js（RPG Maker MV 1.6 部署 Windows 版时用的同一个版本），把游戏装进去，做成 YuYin.exe；
+#   2. 在 GitHub 的 Windows 电脑上打开测试版，把两条剧情分支都自动从头玩到结局，并测试存档和读档；
+#   3. 测试通过后，把 YuYin-Windows-x64.zip 放到仓库的 Releases（发布）页面供下载。
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 版本号（例如 v1.0.0）
+        required: true
+        default: v1.0.0
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+concurrency:
+  group: windows-release
+  cancel-in-progress: false
+
+env:
+  NWJS: v0.29.4
+  TAG: ${{ inputs.version || github.ref_name }}
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 90
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 检查版本号
+        run: |
+          if ($env:TAG -notmatch '^v\d+(\.\d+){1,3}$') { throw "版本号要写成 v1.0.0 这样的格式，现在是：'$env:TAG'" }
+
+      - name: 下载 NW.js 和 rcedit
+        run: |
+          Invoke-WebRequest "https://dl.nwjs.io/$env:NWJS/nwjs-$env:NWJS-win-x64.zip" -OutFile nwjs.zip
+          Expand-Archive nwjs.zip -DestinationPath .
+          Rename-Item "nwjs-$env:NWJS-win-x64" nwjs
+          Invoke-WebRequest https://github.com/electron/rcedit/releases/download/v2.0.0/rcedit-x64.exe -OutFile rcedit.exe
+
+      - name: 做成 YuYin.exe（正式版 + 两个测试版）
+        run: |
+          $version = $env:TAG.Substring(1)
+          function Build($dir, $test) {
+            $opts = @($dir)
+            if ($test) { $opts += $test }
+            node tools/windows/assemble.js @opts
+            if ($LASTEXITCODE) { throw 'assemble.js failed' }
+            Copy-Item nwjs/* $dir -Recurse
+            Move-Item "$dir/nw.exe" "$dir/YuYin.exe"
+            ./rcedit.exe "$dir/YuYin.exe" --set-icon YuYin/icon/icon.ico `
+              --set-file-version $version --set-product-version $version `
+              --set-version-string ProductName '余音' --set-version-string FileDescription '余音' `
+              --set-version-string InternalName 'YuYin' --set-version-string OriginalFilename 'YuYin.exe' `
+              --set-version-string LegalCopyright 'github.com/wxrkz123/game'
+            if ($LASTEXITCODE) { throw 'rcedit failed' }
+          }
+          Build build/release/YuYin ''
+          Build build/test-main/YuYin '--test'
+          Build build/test-alt/YuYin '--test=alt'
+          (Get-Item build/release/YuYin/YuYin.exe).VersionInfo | Format-List ProductName, FileDescription, FileVersion
+          Get-ChildItem build/release/YuYin | Format-Table Name, Length
+
+      - name: 自动通关测试（在 Windows 上打开游戏，两条剧情分支各玩一遍）
+        timeout-minutes: 60
+        run: |
+          foreach ($name in 'main', 'alt') {
+            $dir = "build/test-$name/YuYin"
+            $p = Start-Process -FilePath "$dir/YuYin.exe" -WorkingDirectory $dir -PassThru
+            if (-not $p.WaitForExit(25 * 60 * 1000)) {
+              Add-Type -AssemblyName System.Windows.Forms, System.Drawing
+              $b = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+              $bmp = New-Object System.Drawing.Bitmap $b.Width, $b.Height
+              [System.Drawing.Graphics]::FromImage($bmp).CopyFromScreen($b.Location, [System.Drawing.Point]::Empty, $b.Size)
+              $bmp.Save("$pwd/build/test-$name/screen.png")
+              Stop-Process -Id $p.Id -Force
+              Write-Host "the $name playthrough did not finish in 25 minutes"
+            }
+            Start-Sleep -Seconds 2
+            $file = "$dir/test-result.json"
+            if (-not (Test-Path $file)) { throw "no test-result.json for ${name}: the game did not start" }
+            Get-Content $file -Encoding utf8
+            $r = Get-Content $file -Raw -Encoding utf8 | ConvertFrom-Json
+            if (-not ($r.done -and $r.ok)) { throw "$name playthrough failed after $($r.steps) steps: $($r.errors -join ' | ')" }
+            Write-Host "${name}: passed all $($r.steps) steps on NW.js $($r.env.nw)"
+          }
+
+      - name: 打包成 zip
+        run: |
+          Push-Location build/release
+          7z a -tzip -mx=7 ../../YuYin-Windows-x64.zip YuYin
+          Pop-Location
+          if ($LASTEXITCODE) { throw '7z failed' }
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: YuYin-Windows-x64
+          path: |
+            YuYin-Windows-x64.zip
+            build/test-*/YuYin/test-result.json
+            build/test-*/screen.png
+          if-no-files-found: ignore
+
+      - name: 发布到 Releases 页面
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view $env:TAG *> $null
+          if ($LASTEXITCODE) {
+            gh release create $env:TAG --target $env:GITHUB_SHA --title "余音 $env:TAG" --notes-file tools/windows/release-notes.md
+            if ($LASTEXITCODE) { throw 'gh release create failed' }
+          }
+          gh release upload $env:TAG YuYin-Windows-x64.zip --clobber
+          if ($LASTEXITCODE) { throw 'gh release upload failed' }
+          Write-Host "https://github.com/$env:GITHUB_REPOSITORY/releases/tag/$env:TAG"
