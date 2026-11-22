@@ -130,7 +130,7 @@ async function main() {
         let last = null;
         for (let i = 0; i < 600; i++) {
           const s = await st();
-          if (s.running || s.scene !== 'Scene_Map' || s.busy) { started = true; break; }
+          if (s.running || s.scene !== 'Scene_Map' || s.busy || s.started.length) { started = true; break; }
           const pos = s.x + ',' + s.y + ',' + s.map;
           if (pos === last && !s.dest) still++; else still = 0;
           last = pos;

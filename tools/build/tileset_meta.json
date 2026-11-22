@@ -97,6 +97,46 @@
     51
    ]
   ],
+  "tree_round": [
+   [
+    52,
+    53
+   ],
+   [
+    60,
+    61
+   ]
+  ],
+  "tree_dark": [
+   [
+    54,
+    55
+   ],
+   [
+    62,
+    63
+   ]
+  ],
+  "tree_persimmon": [
+   [
+    56,
+    57
+   ],
+   [
+    64,
+    65
+   ]
+  ],
+  "chicken_coop": [
+   [
+    58,
+    59
+   ],
+   [
+    66,
+    67
+   ]
+  ],
   "tree_small": [
    [
     7
@@ -137,28 +177,56 @@
     47
    ]
   ],
+  "bamboo": [
+   [
+    68
+   ],
+   [
+    76
+   ]
+  ],
+  "mailbox": [
+   [
+    69
+   ],
+   [
+    77
+   ]
+  ],
   "sign_village": [
    [
-    52,
-    53
+    70,
+    71
    ]
   ],
   "sign_blank": [
    [
-    54,
-    55
+    72,
+    73
    ]
   ],
   "bench": [
    [
-    56,
-    57
+    74,
+    75
    ]
   ],
   "boat": [
    [
-    58,
-    59
+    78,
+    79
+   ]
+  ],
+  "log": [
+   [
+    80,
+    81
+   ]
+  ],
+  "bicycle": [
+   [
+    82,
+    83
    ]
   ],
   "bush": [
@@ -168,102 +236,202 @@
   ],
   "bush_pink": [
    [
-    60
+    84
    ]
   ],
   "bush_white": [
    [
-    61
+    85
    ]
   ],
   "flowers": [
    [
-    62
+    86
    ]
   ],
   "flowers_warm": [
    [
-    63
+    87
    ]
   ],
   "tall_grass": [
    [
-    64
+    88
    ]
   ],
   "rock": [
    [
-    65
+    89
    ]
   ],
   "fence_h": [
    [
-    66
+    90
    ]
   ],
   "fence_v": [
    [
-    67
+    91
    ]
   ],
   "bridge_h": [
    [
-    68
+    92
    ]
   ],
   "bridge_v": [
    [
-    69
+    93
    ]
   ],
   "crate": [
    [
-    70
+    94
    ]
   ],
   "barrel": [
    [
-    71
+    95
    ]
   ],
   "firewood": [
    [
-    72
+    96
    ]
   ],
   "grave": [
    [
-    73
+    97
    ]
   ],
   "lily": [
    [
-    74
+    98
    ]
   ],
   "reeds": [
    [
-    75
+    99
    ]
   ],
   "lantern_string": [
    [
-    76
+    100
    ]
   ],
   "stool": [
    [
-    77
+    101
    ]
   ],
   "mic_stand": [
    [
-    78
+    102
    ]
   ],
   "stepping_stone": [
    [
-    79
+    103
+   ]
+  ],
+  "tuft_a": [
+   [
+    104
+   ]
+  ],
+  "tuft_b": [
+   [
+    105
+   ]
+  ],
+  "tuft_c": [
+   [
+    106
+   ]
+  ],
+  "tuft_dry": [
+   [
+    107
+   ]
+  ],
+  "clover": [
+   [
+    108
+   ]
+  ],
+  "pebbles": [
+   [
+    109
+   ]
+  ],
+  "daisies": [
+   [
+    110
+   ]
+  ],
+  "bluebells": [
+   [
+    111
+   ]
+  ],
+  "buttercups": [
+   [
+    112
+   ]
+  ],
+  "dandelions": [
+   [
+    113
+   ]
+  ],
+  "mushrooms": [
+   [
+    114
+   ]
+  ],
+  "fallen_leaves": [
+   [
+    115
+   ]
+  ],
+  "sprouts": [
+   [
+    116
+   ]
+  ],
+  "cabbages": [
+   [
+    117
+   ]
+  ],
+  "stump": [
+   [
+    118
+   ]
+  ],
+  "hedge": [
+   [
+    119
+   ]
+  ],
+  "flowerpot_red": [
+   [
+    120
+   ]
+  ],
+  "flowerpot_yellow": [
+   [
+    121
+   ]
+  ],
+  "watering_can": [
+   [
+    122
+   ]
+  ],
+  "veg_basket": [
+   [
+    123
    ]
   ],
   "school_village": [
@@ -1031,40 +1199,68 @@
     57
    ]
   ],
-  "desk": [
+  "floor_lamp": [
    [
-    50,
-    51
+    50
+   ],
+   [
+    58
    ]
   ],
-  "desk_plain": [
+  "coat_rack": [
+   [
+    51
+   ],
+   [
+    59
+   ]
+  ],
+  "desk": [
    [
     52,
     53
    ]
   ],
-  "wok_stove": [
+  "desk_plain": [
    [
     54,
     55
    ]
   ],
-  "sofa": [
-   [
-    58,
-    59
-   ]
-  ],
-  "keyboard_stand": [
+  "wok_stove": [
    [
     60,
     61
    ]
   ],
-  "altar_table": [
+  "sofa": [
    [
     62,
     63
+   ]
+  ],
+  "keyboard_stand": [
+   [
+    64,
+    65
+   ]
+  ],
+  "altar_table": [
+   [
+    66,
+    67
+   ]
+  ],
+  "runner_red": [
+   [
+    68,
+    69
+   ]
+  ],
+  "runner_green": [
+   [
+    70,
+    71
    ]
   ],
   "small_table": [
@@ -1074,197 +1270,302 @@
   ],
   "tea_table": [
    [
-    64
+    72
    ]
   ],
   "chair_down": [
    [
-    65
+    73
    ]
   ],
   "chair_up": [
    [
-    66
+    74
    ]
   ],
   "dresser": [
    [
-    67
+    75
    ]
   ],
   "window_wall": [
    [
-    68
+    76
    ]
   ],
   "window_night": [
    [
-    69
+    77
    ]
   ],
   "window_lattice": [
    [
-    70
+    78
    ]
   ],
   "clock": [
    [
-    71
+    79
    ]
   ],
   "photo0": [
    [
-    72
+    80
    ]
   ],
   "photo1": [
    [
-    73
+    81
    ]
   ],
   "photo2": [
    [
-    74
+    82
    ]
   ],
   "photo3": [
    [
-    75
+    83
    ]
   ],
   "calendar": [
    [
-    76
+    84
    ]
   ],
   "poster_band": [
    [
-    77
+    85
    ]
   ],
   "poster_star": [
    [
-    78
+    86
    ]
   ],
   "stove": [
    [
-    79
+    87
    ]
   ],
   "sink": [
    [
-    80
+    88
    ]
   ],
   "tv": [
    [
-    81
+    89
    ]
   ],
   "student_desk": [
    [
-    82
+    90
    ]
   ],
   "school_chair": [
    [
-    83
+    91
    ]
   ],
   "podium": [
    [
-    84
+    92
    ]
   ],
   "amp": [
    [
-    85
+    93
    ]
   ],
   "music_stand": [
    [
-    86
+    94
    ]
   ],
   "audience_chair": [
    [
-    87
+    95
    ]
   ],
   "spotlight": [
    [
-    88
+    96
    ]
   ],
   "boxes": [
    [
-    89
+    97
    ]
   ],
   "noodles_table": [
    [
-    90
+    98
    ]
   ],
   "cd_stack": [
    [
-    91
+    99
    ]
   ],
   "heater": [
    [
-    92
+    100
    ]
   ],
   "radio": [
    [
-    93
+    101
    ]
   ],
   "rocking_chair": [
    [
-    94
+    102
    ]
   ],
   "doormat": [
    [
-    95
+    103
    ]
   ],
   "stairs_down": [
    [
-    96
+    104
    ]
   ],
   "counter": [
    [
-    97
+    105
    ]
   ],
   "coffee_machine": [
    [
-    98
+    106
    ]
   ],
   "harmonica_case": [
    [
-    99
+    107
    ]
   ],
   "notebooks": [
    [
-    100
+    108
    ]
   ],
   "shoe_rack": [
    [
-    101
+    109
    ]
   ],
   "rug_round": [
    [
-    102
+    110
+   ]
+  ],
+  "table_lamp": [
+   [
+    111
+   ]
+  ],
+  "wall_shelf": [
+   [
+    112
+   ]
+  ],
+  "fu": [
+   [
+    113
+   ]
+  ],
+  "scroll_painting": [
+   [
+    114
+   ]
+  ],
+  "corn_string": [
+   [
+    115
+   ]
+  ],
+  "thermos": [
+   [
+    116
+   ]
+  ],
+  "washstand": [
+   [
+    117
+   ]
+  ],
+  "plant_small": [
+   [
+    118
+   ]
+  ],
+  "vase_flowers": [
+   [
+    119
+   ]
+  ],
+  "cushion_red": [
+   [
+    120
+   ]
+  ],
+  "cushion_blue": [
+   [
+    121
+   ]
+  ],
+  "basket": [
+   [
+    122
+   ]
+  ],
+  "umbrella_stand": [
+   [
+    123
+   ]
+  ],
+  "slippers": [
+   [
+    124
+   ]
+  ],
+  "trash_can": [
+   [
+    125
+   ]
+  ],
+  "books_floor": [
+   [
+    126
+   ]
+  ],
+  "sheet_music": [
+   [
+    127
+   ]
+  ],
+  "string_lights": [
+   [
+    128
+   ]
+  ],
+  "teddy": [
+   [
+    129
+   ]
+  ],
+  "mirror": [
+   [
+    130
+   ]
+  ],
+  "crate_stack": [
+   [
+    131
    ]
   ]
  }

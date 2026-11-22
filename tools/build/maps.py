@@ -4,22 +4,50 @@ Each function returns (MapPainter, points) where points holds named
 coordinates the story needs (doors, NPC spots...).
 """
 import math
+import random
 
 from mapgen import MapPainter
 
 # map ids
 OLD_HOME, VILLAGE, GRANDPA_HOUSE, APARTMENT, SCHOOL, MUSIC_ROOM, HALL, CITY, BASEMENT = range(1, 10)
+# chapter switches (story_core.S) for chapter-dependent atmosphere
+SW_PRO, SW_CH1, SW_CH2, SW_CH3, SW_CH4, SW_CH5 = range(1, 7)
+
+
+# ground details sprinkled over grass and meadow (tools/art/objects_decor.py)
+DECOR_GRASS = ['tuft_a', 'tuft_b', 'tuft_c', 'tuft_a', 'tuft_b', 'clover', 'pebbles', 'daisies',
+               'buttercups', 'bluebells', 'dandelions']
+DECOR_MEADOW = ['daisies', 'bluebells', 'buttercups', 'tuft_c', 'dandelions', 'clover', 'daisies']
+TREES = ('tree', 'tree_round', 'tree', 'tree_dark')
+
+
+def _tree(x, y):
+    """a tree kind that changes with position, so rows of trees do not look stamped"""
+    return TREES[(x * 7 + y * 13 + x * y) % len(TREES)]
+
+
+def _scatter(m, items, density, seed, ground=('grass',), skip=()):
+    """Sprinkle passable details over empty cells of the given ground kinds, in soft clumps."""
+    r = random.Random(seed)
+    for y in range(m.h):
+        for x in range(m.w):
+            top = m.kind[1][y][x] or m.kind[0][y][x]
+            if top not in ground or m.raw[2][y][x] or m.raw[3][y][x] or (x, y) in skip:
+                continue
+            clump = 0.5 + 0.5 * math.sin(x * 0.9 + seed) * math.cos(y * 0.7 - seed * 0.5)
+            if r.random() < density * (0.3 + 1.4 * clump):
+                m.stamp(r.choice(items), x, y)
 
 
 def _border_trees(m, skip=()):
     w, h = m.w, m.h
     for x in range(0, w - 1, 2):
         if not any(a <= x <= b or a <= x + 1 <= b for (a, b) in skip):
-            m.stamp('tree', x, h - 2)
-        m.stamp('tree', x, 0)
+            m.stamp(_tree(x, h - 2), x, h - 2)
+        m.stamp(_tree(x, 0), x, 0)
     for y in range(2, h - 2, 2):
-        m.stamp('tree', 0, y)
-        m.stamp('tree', w - 2, y)
+        m.stamp(_tree(0, y), 0, y)
+        m.stamp(_tree(w - 2, y), w - 2, y)
 
 
 def village():
@@ -111,7 +139,7 @@ def village():
     _border_trees(m, skip=[(24, 29)])
     for (x, y) in ((9, 8), (16, 8), (23, 2), (30, 7), (10, 22), (22, 21), (36, 24), (12, 28),
                    (32, 27), (2, 7), (2, 2)):
-        m.stamp('tree', x, y)
+        m.stamp(_tree(x, y), x, y)
     pts['cicada_tree'] = (17, 9)       # trunk cell of the tree at (16,8)
     for (x, y) in ((24, 7), (10, 13), (30, 19 - 6), (18, 20), (35, 26)):
         m.stamp('tree_small', x, y)
@@ -126,6 +154,29 @@ def village():
     m.stamp('rock', 34, 25)
     m.stamp('clothesline', 16, 4)
     m.stamp('sign_village', 24, 28)
+    # ---- lived-in details ------------------------------------------------------------
+    m.stamp('tree_persimmon', 18, 2)
+    m.stamp('bamboo', 9, 2)
+    m.stamp('bamboo', 10, 4)
+    for (x, y, k) in ((12, 7, 'flowerpot_red'), (14, 7, 'flowerpot_yellow'), (28, 7, 'flowerpot_red'),
+                      (13, 26, 'flowerpot_red'), (19, 26, 'flowerpot_yellow')):
+        m.stamp(k, x, y)
+    m.stamp('veg_basket', 26, 7)
+    m.stamp('chicken_coop', 28, 10)
+    m.stamp('watering_can', 30, 18)
+    m.stamp('bicycle', 31, 23)
+    m.stamp('log', 2, 10)
+    m.stamp('stump', 4, 3)
+    m.stamp('mushrooms', 11, 9)
+    for y in range(17, 22):                      # the farmer's field
+        for x in range(31, 37):
+            if (x, y) != (34, 19):
+                m.stamp('sprouts' if y % 2 else 'cabbages' if x in (31, 36) else 'sprouts', x, y)
+    _scatter(m, DECOR_GRASS, 0.16, 1)
+    _scatter(m, DECOR_MEADOW, 0.4, 2, ground=('meadow',))
+    m.atmos('pollen clouds fireflies', SW_CH1)    # summer
+    m.atmos('petals clouds', SW_CH4)              # spring
+    m.atmos('leaves motes', SW_CH5)               # autumn dusk
     pts['entrance'] = (26, 30)
     pts['bridge'] = (6, 16)
     pts['stream_spot'] = (6, 15)
@@ -152,8 +203,13 @@ def old_home():
         ('altar_table', 2, 8), ('rocking_chair', 12, 7), ('tea_table', 11, 7), ('radio', 14, 8),
         ('small_table', 13, 7), ('harmonica_case', 13, 7), ('notebooks', 8, 4),
         ('plant', 14, 9),
+        # keepsakes of a long life
+        ('wall_shelf', 4, 2), ('scroll_painting', 8, 2), ('floor_lamp', 12, 5), ('thermos', 4, 8),
+        ('cushion_red', 5, 6), ('basket', 2, 10), ('slippers', 9, 10), ('plant_small', 13, 9),
+        ('runner_red', 7, 10),
     ])
     m.auto_shadows()
+    m.atmos('dust')
     pts = dict(door=(8, 11), entry=(8, 10), piano=(3, 4), piano2=(4, 4), stand=(4, 5))
     return m, pts
 
@@ -169,8 +225,13 @@ def grandpa_house():
         ('window_lattice', 12, 2), ('bed_old', 14, 3), ('wardrobe', 13, 3), ('radio', 4, 4),
         ('table', 5, 7), ('chair_down', 5, 6), ('chair_up', 6, 9), ('bookshelf', 10, 3),
         ('boxes', 2, 9), ('plant', 14, 8), ('dresser', 11, 4),
+        ('corn_string', 3, 2), ('fu', 8, 2), ('scroll_painting', 11, 2), ('thermos', 7, 7),
+        ('washstand', 2, 6), ('cushion_red', 9, 8), ('cushion_blue', 11, 8), ('basket', 3, 10),
+        ('slippers', 9, 10), ('plant_small', 12, 10), ('runner_green', 7, 10),
+        ('tea_table', 10, 7), ('rocking_chair', 12, 7),      # the same chair is in her home at 78
     ])
     m.auto_shadows()
+    m.atmos('dust')
     pts = dict(door=(8, 11), entry=(8, 10), bed=(14, 4), bedside=(14, 6))
     return m, pts
 
@@ -185,7 +246,8 @@ def apartment():
             m.kind[0][y][12] = ('walltop', 'home')
     m.wall_block(12, 1, 1, 3, 'home')
     m.rect(14, 8, 4, 3, 'carpet_blue', z=0)
-    m.rect(2, 11, 2, 1, 'carpet_red', z=0)
+    m.rect(2, 10, 4, 3, 'carpet_red', z=0)       # living-room rug under the sofa and TV
+    m.rect(2, 4, 4, 3, 'tile_floor', z=0)        # kitchen tiles
     m.door_gap(6, 13, 'wood_floor')
     _furnish_wall(m, [
         # kitchen / living room
@@ -196,8 +258,15 @@ def apartment():
         ('bed_blue', 18, 3), ('desk', 13, 4), ('chair_up', 13, 5), ('bookshelf', 16, 3),
         ('window_wall', 17, 2), ('poster_star', 13, 2), ('poster_band', 15, 2), ('wardrobe', 18, 10),
         ('dresser', 18, 8 + 0),
+        # living room
+        ('floor_lamp', 4, 9), ('vase_flowers', 10, 5), ('umbrella_stand', 7, 12), ('coat_rack', 5, 11),
+        ('trash_can', 5, 4), ('runner_red', 8, 9), ('wall_shelf', 5, 2), ('fu', 8, 2),
+        # Lin Yin's room
+        ('string_lights', 14, 2), ('teddy', 18, 5), ('books_floor', 13, 7), ('cushion_blue', 15, 9),
+        ('sheet_music', 14, 7),
     ])
     m.auto_shadows()
+    m.atmos('dust')
     pts = dict(door=(6, 13), entry=(6, 12), desk=(13, 4), bed=(18, 4), kitchen=(4, 6),
                mom_kitchen=(5, 6), bedroom=(15, 7))
     return m, pts
@@ -216,7 +285,7 @@ def school_yard():
     m.stamp('bike_rack', 19, 7)
     m.stamp('bike_rack', 19, 8)
     for (x, y) in ((0, 0), (2, 0), (16, 0), (18, 0), (20, 0), (22, 0), (0, 2), (22, 2), (0, 4), (23, 4)):
-        m.stamp('tree', x, y) if x < 23 else m.stamp('tree_small', x, y)
+        m.stamp(_tree(x, y), x, y) if x < 23 else m.stamp('tree_small', x, y)
     for (x, y) in ((1, 7), (1, 10), (1, 13), (23, 9), (23, 12), (3, 16), (8, 16), (16, 16), (20, 16)):
         m.stamp('tree_small', x, y) if y < 16 else m.stamp('bush', x, y)
     for (x, y) in ((4, 11), (8, 11), (15, 11), (18, 11)):
@@ -228,6 +297,10 @@ def school_yard():
         m.stamp('fence_h', x, 17)
     for (x, y) in ((6, 9), (9, 14), (13, 8), (21, 14)):
         m.stamp('flowers', x, y)
+    m.stamp('bicycle', 21, 7)
+    _scatter(m, DECOR_GRASS, 0.2, 3)
+    _scatter(m, ['fallen_leaves'], 0.07, 4, ground=('plaza',))
+    m.atmos('leaves clouds')                      # autumn
     return m, pts
 
 
@@ -242,8 +315,11 @@ def music_room():
         ('music_stand', 6, 7), ('music_stand', 8, 7), ('music_stand', 10, 7),
         ('keyboard_stand', 3, 8), ('school_chair', 6, 9), ('school_chair', 8, 9), ('school_chair', 10, 9),
         ('guitar_stand', 14, 7), ('bookshelf', 15, 3) if False else ('plant', 15, 8),
+        ('wall_shelf', 5, 2), ('sheet_music', 5, 5), ('sheet_music', 9, 10), ('plant_small', 2, 7),
+        ('trash_can', 13, 10), ('books_floor', 2, 10),
     ])
     m.auto_shadows()
+    m.atmos('dust')
     return m, dict(door=(8, 11), entry=(8, 10))
 
 
@@ -256,11 +332,14 @@ def hall():
         ('stage_curtain', 2, 3), ('stage_curtain', 18, 3), ('spotlight', 7, 4), ('spotlight', 13, 4),
         ('mic_stand' if False else 'music_stand', 10, 5), ('amp', 4, 5), ('amp', 16, 5),
         ('drum_kit', 13, 3),
+        ('vase_flowers', 3, 7), ('vase_flowers', 17, 7), ('plant', 18, 11), ('sheet_music', 11, 5),
     ])
     for y in (8, 10):
         for x in list(range(3, 10)) + list(range(11, 18)):
             m.stamp('audience_chair', x, y)
     m.auto_shadows()
+    m.atmos('dust')
+    m.vignette(0.4)
     pts = dict(door=(10, 13), entry=(10, 12), stage=(10, 6), stage_left=(8, 6), stage_right=(12, 6),
                back=(10, 12))
     return m, pts
@@ -303,10 +382,14 @@ def city():
     m.stamp('bus_stop', 7, 12)
     m.stamp('bench', 9, 13)
     m.stamp('snowman', 30, 13)
+    m.stamp('bicycle', 6, 7)
+    m.stamp('flowerpot_red', 23, 6)          # the flower shop's display
+    m.stamp('flowerpot_yellow', 24, 6)
     for x in (0, 4, 11, 16, 25, 33):
         m.stamp('planter_tree', x, 14)
     m.cells([(29, 14), (30, 15), (31, 15), (32, 14), (0, 7), (1, 7), (18, 15), (19, 15), (12, 6),
              (23, 8), (24, 8), (6, 15), (7, 15)], 'snow')
+    m.vignette(0.45)
     return m, pts
 
 
@@ -320,8 +403,12 @@ def basement():
         ('window_night', 7, 2), ('calendar', 5, 2), ('poster_star', 10, 2),
         ('mattress', 11, 4), ('noodles_table', 9, 5), ('guitar_stand', 4, 3), ('boxes', 4, 8),
         ('boxes', 5, 8), ('cd_stack', 6, 4), ('laundry', 12, 7), ('heater', 10, 8),
+        ('crate_stack', 12, 4), ('books_floor', 7, 5), ('trash_can', 6, 9), ('sheet_music', 8, 7),
+        ('thermos', 10, 5), ('slippers', 9, 9), ('string_lights', 9, 2), ('cushion_blue', 6, 6),
     ])
     m.auto_shadows()
+    m.atmos('dust')
+    m.vignette(0.45)
     return m, dict(door=(8, 10), entry=(8, 9), phone=(9, 5))
 
 

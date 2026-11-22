@@ -18,6 +18,45 @@ from autotile import floor_shape, wall_shape  # noqa: E402
 META = json.load(open(os.path.join(HERE, 'tileset_meta.json'), encoding='utf-8'))
 TILESETS = json.load(open(os.path.join(HERE, 'tilesets.json'), encoding='utf-8'))
 
+# Objects that give off light, read by LifeSong_Atmosphere.js from the map note.
+# name -> list of (dx, dy, radius, colour, strength, flicker): the glow's centre in tiles
+# from the object's top-left corner.  Windows on an inside wall get a sun shaft instead.
+WARM, CANDLE, COOL, MOON = '#ffd894', '#ff9a52', '#cfe6ff', '#9fc0ff'
+OBJECT_LIGHTS = {
+    # village
+    'grandpa_house': [(0.96, 2.83, 1.6, WARM, 0.7, False), (4.04, 2.83, 1.6, WARM, 0.7, False)],
+    'house_red': [(2.71, 2.79, 1.6, WARM, 0.7, False)],
+    'house_brick': [(0.92, 2.79, 1.6, WARM, 0.7, False)],
+    'house_wood': [(2.71, 2.79, 1.6, WARM, 0.7, False)],
+    'school_village': [(x, 2.67, 1.3, WARM, 0.5, False) for x in (0.83, 2.08, 5.0, 6.25)],
+    'lantern_post': [(0.4, 0.7, 2.0, CANDLE, 1.0, True)],
+    'lantern_string': [(0.5, 0.6, 1.5, CANDLE, 0.9, True)],
+    # city
+    'streetlamp': [(0.52, 0.44, 2.8, '#ffe6a8', 1.0, False)],
+    'cafe': [(1.04, 2.92, 2.6, '#ffc27a', 0.9, False), (0.92, 0.63, 1.2, WARM, 0.5, False),
+             (3.08, 0.63, 1.2, WARM, 0.5, False)],
+    'shop_a': [(1.17, 4.25, 2.4, WARM, 0.7, False)],
+    'shop_b': [(1.17, 4.25, 2.4, '#ffc8d8', 0.7, False)],
+    'shop_c': [(1.17, 4.25, 2.2, WARM, 0.5, False)],
+    'convenience': [(1.17, 4.25, 2.8, COOL, 0.9, False)],
+    'vending': [(0.5, 1.0, 1.6, COOL, 0.8, False)],
+    'bus_stop': [(0.5, 0.6, 1.5, COOL, 0.6, False)],
+    'subway': [(1.5, 0.9, 2.0, '#bcdcff', 0.6, False)],
+    'neon_live': [(1.0, 0.5, 2.4, '#ff5fa8', 1.0, True)],
+    'neon_bar': [(1.0, 0.5, 2.4, '#4fd8ff', 1.0, True)],
+    # inside
+    'window_night': [(0.5, 0.5, 1.8, MOON, 0.6, False)],
+    'tv': [(0.5, 0.5, 1.4, '#a8d4ff', 0.7, True)],
+    'heater': [(0.5, 0.6, 1.8, '#ff8a40', 0.9, True)],
+    'desk': [(1.55, 0.2, 1.8, '#ffe4a8', 0.8, False)],
+    'radio': [(0.5, 0.5, 0.9, '#ffcf80', 0.5, False)],
+    'spotlight': [(0.5, 2.2, 2.6, '#fff2c8', 1.0, False)],
+    'floor_lamp': [(0.5, 0.5, 2.4, '#ffe0a0', 0.9, False)],
+    'table_lamp': [(0.5, 0.2, 1.6, '#ffe0a0', 0.8, False)],
+    'string_lights': [(0.5, 0.45, 1.5, '#ffd6c8', 0.7, True)],
+}
+SUN_WINDOWS = ('window_wall', 'window_lattice')
+
 
 class MapPainter:
     def __init__(self, w, h, tileset='outside'):
@@ -29,6 +68,26 @@ class MapPainter:
         self.raw = [[[0] * w for _ in range(h)] for _ in range(4)]       # explicit tile ids per z
         self.shadow = [[0] * w for _ in range(h)]
         self.region = [[0] * w for _ in range(h)]
+        self.notes = []          # map note lines (atmosphere, lights) for LifeSong_Atmosphere.js
+
+    # -- atmosphere ---------------------------------------------------------------
+    def atmos(self, effects, switch=0):
+        """effects: 'leaves clouds' ...; switch: only while this switch is ON (0 = always)"""
+        self.notes.append('<atmos%s: %s>' % ('@%d' % switch if switch else '', effects))
+
+    def light(self, x, y, radius, colour, strength=1.0, flicker=False, switch=0):
+        self.notes.append('<light%s: %g %g %g %s %g%s>' % (
+            '@%d' % switch if switch else '', round(x, 2), round(y, 2), radius, colour, strength,
+            ' flicker' if flicker else ''))
+
+    def beam(self, x, y, length=4):
+        self.notes.append('<beam: %d %d %d>' % (x, y, length))
+
+    def vignette(self, v):
+        self.notes.append('<vignette: %g>' % v)
+
+    def note(self):
+        return '\n'.join(self.notes)
 
     # -- ground ---------------------------------------------------------------
     def fill(self, kind, z=0):
@@ -57,6 +116,10 @@ class MapPainter:
     # -- objects ----------------------------------------------------------------
     def stamp(self, name, x, y, z=None):
         ids = self.meta[name]
+        for (dx, dy, r, col, k, fl) in OBJECT_LIGHTS.get(name, ()):
+            self.light(x + dx, y + dy, r, col, k, fl)
+        if name in SUN_WINDOWS:
+            self.beam(x, y)
         for j, row in enumerate(ids):
             for i, tid in enumerate(row):
                 xx, yy = x + i, y + j

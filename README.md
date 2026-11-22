@@ -18,12 +18,17 @@
 | ![](docs/images/ch1_village.png) | ![](docs/images/minigame.png) | ![](docs/images/ch3_city.png) |
 | **第四章「无声」45 岁** | **用眼睛“听”** | **第五章「余音」78 岁** |
 | ![](docs/images/ch4_silence.png) | ![](docs/images/minigame_feel.png) | ![](docs/images/ch5_concert.png) |
+| **爷爷家的午后** | **地下室的冬夜** | **片尾：她的一生** |
+| ![](docs/images/ch1_grandpa_house.png) | ![](docs/images/ch3_room.png) | ![](docs/images/credits.png) |
 
 - 5 个章节 + 序章，约 30～40 分钟，无战斗
 - 12 次旋律小游戏：跟着弹、用眼睛听、自由创作
 - 全部美术（像素图块、33 个角色、25 个对话头像、界面）和全部音乐（11 首编曲 + 音效）都是本项目原创，由 `tools/` 里的程序生成
 - 带名字框和头像的对话（主角的头像随年龄变化）、章节标题卡、记录人生的菜单
 - 第二、三章的选择会改变后面的台词；你在终章写下的最后一句，会出现在片尾字幕里
+- 会随时间变化的氛围：窗口照进来的阳光、黄昏和夜里亮起的路灯与灯笼、夏天的花粉和萤火虫、秋天的落叶、春天的花瓣、地上飘过的云影
+- 有生活气息的地图：爷爷家的玉米串和“福”字、红色暖水瓶、晒太阳的摇椅，田里的菜、鸡窝、自行车……
+- 片尾字幕：在老槐树的夜色里，一页一页回顾林音的一生
 
 ## 怎么玩 / 怎么改
 
@@ -49,7 +54,8 @@
 YuYin/                      RPG Maker MV 项目（用编辑器打开这里的 Game.rpgproject）
   data/                     地图、事件、数据库
   img/  audio/  fonts/      图片、声音、字体
-  js/plugins/LifeSong.js    本游戏的插件（旋律小游戏、标题卡、名字框、菜单）
+  js/plugins/LifeSong.js    本游戏的插件（旋律小游戏、标题卡、名字框、菜单、片尾字幕）
+  js/plugins/LifeSong_Atmosphere.js   氛围插件（灯光、光柱、落叶花瓣萤火虫、云影、暗角）
 docs/                       策划案、剧本、新手教程、截图
 tools/                      生成素材和数据的程序（进阶，可忽略）
   art/      像素画生成（图块、角色、头像、界面、标题）

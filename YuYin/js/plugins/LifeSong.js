@@ -70,6 +70,22 @@
  *
  *  LifeSong Song 乐器 [每拍帧数]
  *      播放整首《余音》主旋律 + 变量里保存的玩家结尾（终章用）。
+ *
+ * ============================================================================
+ *  三、片尾字幕
+ * ============================================================================
+ *  用普通的“显示滚动文字”，第一行写【片尾】，就会变成一页一页淡入淡出的片尾：
+ *
+ *      【片尾】
+ *      # 余　音              ← 以 # 开头的一行用大字
+ *      —— 一生所爱 ——
+ *      ———                   ← 三个以上的破折号：换下一页
+ *      【人生】八岁·蝉鸣|十六岁·逆风|二十五岁·霓虹|四十五岁·无声|七十八岁·余音
+ *                            ← 这一页依次出现林音五个年龄的头像
+ *      ———
+ *      作曲　你
+ *
+ *  可以用 \C[6] 变色、\V[21] 显示变量。按确定键可以跳到下一页。
  * ============================================================================
  */
 
@@ -368,6 +384,249 @@ var LifeSong = LifeSong || {};
         }
     };
     window.Scene_LSChapter = Scene_LSChapter;
+
+    // ------------------------------------------------------------------------
+    // Ending credits: a "Show Scrolling Text" whose first line is 【片尾】
+    // ------------------------------------------------------------------------
+    var _command105 = Game_Interpreter.prototype.command105;
+    Game_Interpreter.prototype.command105 = function() {
+        var next = this._list[this._index + 1];
+        if (!next || next.code !== 405 || !/^【片尾】/.test(next.parameters[0])) {
+            return _command105.call(this);
+        }
+        var lines = [];
+        while (this.nextEventCode() === 405) {
+            this._index++;
+            lines.push(this.currentCommand().parameters[0]);
+        }
+        SceneManager.push(Scene_LSCredits);
+        SceneManager.prepareNextScene(lines.slice(1));
+        this.wait(1);   // stop here until the credits are over
+        return true;
+    };
+
+    // cards are separated by a line of ——— ; 【人生】a|b|c|d|e shows Lin Yin at every age
+    LifeSong.parseCredits = function(lines) {
+        var cards = [[]];
+        lines.forEach(function(line) {
+            if (/^\s*[—\-]{3,}\s*$/.test(line)) cards.push([]);
+            else cards[cards.length - 1].push(line);
+        });
+        return cards.map(function(card) {
+            while (card.length && !card[0].trim()) card.shift();
+            while (card.length && !card[card.length - 1].trim()) card.pop();
+            var life = card.length === 1 && /^【人生】/.test(card[0]);
+            return { lines: card, life: life ? card[0].replace('【人生】', '').split('|') : null };
+        }).filter(function(c) { return c.lines.length; });
+    };
+
+    function Window_LSCredits() {
+        this.initialize.apply(this, arguments);
+    }
+    Window_LSCredits.prototype = Object.create(Window_Base.prototype);
+    Window_LSCredits.prototype.constructor = Window_LSCredits;
+    Window_LSCredits.prototype.initialize = function() {
+        Window_Base.prototype.initialize.call(this, 0, 0, Graphics.boxWidth, Graphics.boxHeight);
+        this.opacity = 0;
+        this.contentsOpacity = 0;
+    };
+    // "# title" lines are drawn twice as large (still crisp: the pixel font doubles cleanly)
+    Window_LSCredits.prototype.lineInfo = function(line) {
+        var big = /^#\s*/.test(line);
+        var text = big ? '\\{\\{' + line.replace(/^#\s*/, '') : line;
+        return { text: text, big: big, height: big ? 72 : (line.trim() ? 36 : 18) };
+    };
+    Window_LSCredits.prototype.lineWidth = function(info) {
+        var t = this.convertEscapeCharacters(info.text);
+        var icons = (t.match(/\x1bI\[\d+\]/gi) || []).length;
+        t = t.replace(/\x1b[A-Z]+\[\d*\]/gi, '').replace(/\x1b[{}]/g, '');
+        this.contents.fontSize = info.big ? this.standardFontSize() * 2 : this.standardFontSize();
+        var w = this.textWidth(t) + icons * (Window_Base._iconWidth + 4);
+        this.resetFontSettings();
+        return w;
+    };
+    Window_LSCredits.prototype.drawCard = function(card) {
+        this.contents.clear();
+        var self = this;
+        var infos = card.lines.map(function(l) { return self.lineInfo(l); });
+        if (card.life) {
+            // captions under the portraits (the portraits are sprites, see Scene_LSCredits)
+            var n = card.life.length, gap = 12, size = 144;
+            var x0 = (this.contentsWidth() - (n * size + (n - 1) * gap)) / 2;
+            this.changeTextColor('#d9b26a');
+            card.life.forEach(function(caption, i) {
+                var parts = caption.split(/[·・]/);
+                self.drawText(parts[0], x0 + i * (size + gap), 330, size, 'center');
+                self.changeTextColor('#fff6e4');
+                self.drawText(parts[1] || '', x0 + i * (size + gap), 366, size, 'center');
+                self.changeTextColor('#d9b26a');
+            });
+            this.resetTextColor();
+            return;
+        }
+        var total = infos.reduce(function(s, i) { return s + i.height; }, 0);
+        var y = Math.round((this.contentsHeight() - total) / 2);
+        infos.forEach(function(info) {
+            if (info.text.trim()) {
+                var x = Math.round((self.contentsWidth() - self.lineWidth(info)) / 2);
+                self.drawTextEx(info.text, x, y + (info.big ? 12 : 0));
+            }
+            y += info.height;
+        });
+    };
+
+    function Scene_LSCredits() {
+        this.initialize.apply(this, arguments);
+    }
+    Scene_LSCredits.prototype = Object.create(Scene_Base.prototype);
+    Scene_LSCredits.prototype.constructor = Scene_LSCredits;
+    Scene_LSCredits.prototype.prepare = function(lines) {
+        this._lines = lines;
+        this._cards = LifeSong.parseCredits(lines);
+    };
+    Scene_LSCredits.prototype.allText = function() {
+        return this._lines.join(' ');
+    };
+    Scene_LSCredits.prototype.create = function() {
+        Scene_Base.prototype.create.call(this);
+        // the old tree at night
+        this._back = new Sprite(ImageManager.loadTitle1($dataSystem.title1Name || 'YuYin_Title'));
+        this._back.setColorTone([-90, -70, 0, 60]);
+        this._back.opacity = 0;
+        this.addChild(this._back);
+        var shade = new Bitmap(Graphics.width, Graphics.height);
+        shade.fillAll('rgba(10,8,24,0.45)');
+        this.addChild(new Sprite(shade));
+        this.createStars();
+        this.createNotes();
+        this._faces = [];
+        for (var i = 0; i < 5; i++) {
+            var f = new Sprite(ImageManager.loadFace('YY_Yin'));
+            f.setFrame((i % 4) * 144, Math.floor(i / 4) * 144, 144, 144);
+            f.opacity = 0;
+            this._faces.push(f);
+            this.addChild(f);
+        }
+        this.createWindowLayer();
+        this._window = new Window_LSCredits();
+        this.addWindow(this._window);
+        this._cardIndex = -1;
+        this._t = 0;
+        this._phase = 'start';
+    };
+    Scene_LSCredits.prototype.createStars = function() {
+        var dot = new Bitmap(2, 2);
+        dot.fillAll('#fff6e4');
+        this._stars = [];
+        for (var i = 0; i < 46; i++) {
+            var s = new Sprite(dot);
+            s.x = Math.floor(Math.random() * Graphics.width / 2) * 2;
+            s.y = Math.floor(Math.random() * Graphics.height * 0.28) * 2;
+            s.phase = Math.random() * Math.PI * 2;
+            s.speed = 0.02 + Math.random() * 0.05;
+            this._stars.push(s);
+            this.addChild(s);
+        }
+    };
+    Scene_LSCredits.prototype.createNotes = function() {
+        this._notes = [];
+        var glyphs = ['♪', '♫', '♩'];
+        for (var i = 0; i < 9; i++) {
+            var b = new Bitmap(32, 32);
+            b.fontFace = 'GameFont, sans-serif';
+            b.fontSize = 24;
+            b.outlineWidth = 0;
+            b.textColor = i % 3 ? '#d9b26a' : '#fff6e4';
+            b.drawText(glyphs[i % 3], 0, 0, 32, 32, 'center');
+            var s = new Sprite(b);
+            this.resetNote(s, true);
+            this._notes.push(s);
+            this.addChild(s);
+        }
+    };
+    Scene_LSCredits.prototype.resetNote = function(s, anywhere) {
+        s.baseX = 40 + Math.random() * (Graphics.width - 80);
+        s.y = anywhere ? Math.random() * Graphics.height : Graphics.height + 20;
+        s.vy = 0.25 + Math.random() * 0.35;
+        s.phase = Math.random() * Math.PI * 2;
+    };
+    Scene_LSCredits.prototype.start = function() {
+        Scene_Base.prototype.start.call(this);
+        this.startFadeIn(60, false);
+    };
+    Scene_LSCredits.prototype.holdFrames = function(card) {
+        return card.life ? 5 * 40 + 200 : 150 + 40 * card.lines.filter(function(l) { return l.trim(); }).length;
+    };
+    Scene_LSCredits.prototype.update = function() {
+        Scene_Base.prototype.update.call(this);
+        var t = Graphics.frameCount;
+        this._back.opacity = Math.min(255, this._back.opacity + 3);
+        this._stars.forEach(function(s) {
+            s.opacity = 90 + 140 * (0.5 + 0.5 * Math.sin(t * s.speed + s.phase));
+        });
+        var self = this;
+        this._notes.forEach(function(s) {
+            s.y -= s.vy;
+            s.x = Math.round(s.baseX + Math.sin(t * 0.02 + s.phase) * 14);
+            s.opacity = Math.max(0, Math.min(160, (s.y - 60) * 0.6));
+            if (s.y < 40) self.resetNote(s, false);
+        });
+        this.updateCards();
+    };
+    Scene_LSCredits.prototype.updateCards = function() {
+        var card = this._cards[this._cardIndex];
+        this._t++;
+        var skip = Input.isTriggered('ok') || TouchInput.isTriggered();
+        if (this._phase === 'start') {
+            if (this._t > 50) this.nextCard();
+        } else if (this._phase === 'in') {
+            this._window.contentsOpacity = Math.min(255, this._t * 255 / 45);
+            if (this._t >= 45) this.setPhase('hold');
+        } else if (this._phase === 'hold') {
+            if (card.life) this.updateFaces(this._t);
+            if (this._t >= this.holdFrames(card) || (skip && this._t > 30)) this.setPhase('out');
+        } else if (this._phase === 'out') {
+            var a = Math.max(0, 255 - this._t * 255 / 45);
+            this._window.contentsOpacity = a;
+            this._faces.forEach(function(f) { f.opacity = Math.min(f.opacity, a); });
+            if (this._t >= 50) this.nextCard();
+        } else if (this._phase === 'end' && this._t > 70 && !this._done) {
+            this._done = true;
+            this.popScene();
+        }
+    };
+    Scene_LSCredits.prototype.setPhase = function(phase) {
+        this._phase = phase;
+        this._t = 0;
+    };
+    Scene_LSCredits.prototype.nextCard = function() {
+        this._cardIndex++;
+        var card = this._cards[this._cardIndex];
+        if (!card) {
+            this.setPhase('end');
+            this.startFadeOut(60, false);
+            return;
+        }
+        this._window.drawCard(card);
+        this._faces.forEach(function(f) { f.opacity = 0; });
+        if (card.life) {
+            var n = Math.min(card.life.length, this._faces.length), gap = 12, size = 144;
+            var x0 = (Graphics.boxWidth - (n * size + (n - 1) * gap)) / 2;
+            for (var i = 0; i < this._faces.length; i++) {
+                this._faces[i].x = x0 + i * (size + gap);
+                this._faces[i].y = 170;
+                this._faces[i].visible = i < n;
+            }
+        }
+        this.setPhase('in');
+    };
+    // portraits appear one after another, like the years going by
+    Scene_LSCredits.prototype.updateFaces = function(t) {
+        this._faces.forEach(function(f, i) {
+            if (f.visible) f.opacity = Math.max(0, Math.min(255, (t - i * 40) * 255 / 40));
+        });
+    };
+    window.Scene_LSCredits = Scene_LSCredits;
 
     // ------------------------------------------------------------------------
     // The melody mini-game

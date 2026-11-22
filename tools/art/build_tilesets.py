@@ -15,6 +15,7 @@ from materials import make_materials
 from walls import make_walls
 import objects_outside as OO
 import objects_inside as OI
+import objects_decor as OD
 
 T = TILE
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
@@ -155,6 +156,7 @@ def build():
     village_props = {k: v for k, v in OO.OBJECTS.items()
                      if k not in ('grandpa_house', 'house_red', 'house_brick', 'house_wood',
                                   'school_village', 'shed')}
+    village_props.update(OD.OUTSIDE)
     buildings = {k: OO.OBJECTS[k] for k in ('grandpa_house', 'house_red', 'house_brick', 'house_wood',
                                             'school_village', 'shed')}
     sB = pack_objects(village_props, [0], flags, meta)
@@ -180,7 +182,7 @@ def build():
                          'concrete', 'stage', 'tatami'], flags, meta)
     a4 = a4_sheet(make_walls(), flags, meta)
     a5 = a5_sheet([('void', '#000000', 'x')], flags, meta)
-    sB = pack_objects(OI.OBJECTS, [0, 1], flags, meta)
+    sB = pack_objects(dict(OI.OBJECTS, **OD.INSIDE), [0, 1], flags, meta)
     names = ['', 'YY_Inside_A2', '', 'YY_Inside_A4', 'YY_Inside_A5', 'YY_Inside_B', 'YY_Inside_C', '', '']
     a2.save(os.path.join(IMG, names[1] + '.png'))
     a4.save(os.path.join(IMG, names[3] + '.png'))

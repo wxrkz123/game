@@ -723,7 +723,8 @@ def village_events(meta, pts):
                    (13, 8), (12, 15)):
         ev.add('灯笼', x, y, [page(None, cond=C('CH1')),
                             page(None, image=('!$Lantern', DOWN), cond=C('CH5'), step_anime=True, priority=2,
-                                 through=True)])
+                                 through=True)],
+               note='<light: 1.8 #ff9a52 1 flicker>')    # glows via LifeSong_Atmosphere.js
 
     def check_ready(c):
         c.if_switch(S['C5_XIAOHE'], then=lambda c: c.if_switch(S['C5_JIE'], then=lambda c: c.if_switch(
@@ -854,14 +855,16 @@ def village_events(meta, pts):
         c.narrate('那天晚上，大槐树下的歌声，', '一直唱到了很晚很晚。')
         c.fadeout()
         c.wait(60)
-        c.scroll(['', '《余　音》', '', '—— 一生所爱 ——', '', '', '林音（1990 — ）',
-                  '她这一辈子，一直在唱同一首歌。', '', '', '———————————', '',
-                  '最后一句', '', '\\C[6]\\V[%d]\\C[0]' % V['FINAL_TEXT'], '', '作曲　你', '', '',
-                  '———————————', '',
+        # 【片尾】 turns this scrolling text into the credits scene of LifeSong.js (one card per ———)
+        c.scroll(['【片尾】',
+                  '# 余　音', '', '—— 一生所爱 ——', '———',
+                  '林音（1990 — ）', '', '她这一辈子，一直在唱同一首歌。', '———',
+                  '【人生】八岁·蝉鸣|十六岁·逆风|二十五岁·霓虹|四十五岁·无声|七十八岁·余音', '———',
+                  '最后一句', '', '\\C[6]\\V[%d]\\C[0]' % V['FINAL_TEXT'], '', '作曲　你', '———',
                   '故事　美术　音乐　程序', '由 Claude 协助制作', '',
-                  '引擎　RPG Maker MV Corescript（MIT 许可）', '字体　Fusion Pixel Font（SIL OFL 1.1）', '',
-                  '———————————', '', '', '谢谢你，陪她走完这一生。', '', '愿你也有一样东西，',
-                  '可以热爱一辈子。', '', '', '', '— 完 —'], speed=2, no_fast=False)
+                  '引擎　RPG Maker MV Corescript（MIT 许可）', '字体　Fusion Pixel Font（SIL OFL 1.1）', '———',
+                  '谢谢你，陪她走完这一生。', '', '愿你也有一样东西，', '可以热爱一辈子。', '———',
+                  '— 完 —'], speed=2, no_fast=False)
         c.fade_bgm(4)
         c.wait(120)
         c.to_title()

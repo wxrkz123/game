@@ -48,6 +48,11 @@
       Bot.playMinigame(scene);
       return;
     }
+    if (window.Scene_LSCredits && scene instanceof window.Scene_LSCredits) {
+      if (!scene._botSeen) { scene._botSeen = true; Bot.log.push('credits ' + scene.allText()); }
+      if (Bot.frame % 30 === 0) press('ok');
+      return;
+    }
     if (window.Scene_LSChapter && scene instanceof window.Scene_LSChapter) {
       if (!scene._botSeen) { scene._botSeen = true; Bot.cards++; Bot.log.push('card ' + scene._title); }
       if (scene._count > 90 && Bot.frame % 8 === 0) press('ok');
@@ -133,7 +138,16 @@
     if (!ev) return 'no-event:' + name;
     $gameTemp.setDestination(ev.x, ev.y);
     Bot.target = ev;
+    Bot.started = [];
     return 'ok';
+  };
+
+  // remember which events started, so a short event that runs between two polls still counts
+  Bot.started = [];
+  var _start = Game_Event.prototype.start;
+  Game_Event.prototype.start = function () {
+    _start.call(this);
+    if (this._starting) Bot.started.push(this.event().name);
   };
 
   Bot.state = function () {
@@ -149,8 +163,9 @@
       text: $gameMessage ? $gameMessage.allText().slice(0, 60) : '',
       dest: $gameTemp ? $gameTemp.isDestinationValid() : false,
       minigames: Bot.minigames,
+      started: Bot.started.slice(),
       cards: Bot.cards,
-      credits: !!(s && s._scrollTextWindow && s._scrollTextWindow.visible),
+      credits: !!(s && window.Scene_LSCredits && s instanceof window.Scene_LSCredits),
     };
   };
 

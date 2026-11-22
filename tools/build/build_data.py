@@ -224,7 +224,7 @@ def build_maps():
         meta = META['outside' if m.tileset_id == 1 else 'inside']
         DEFAULT_CHAPTER['name'] = MAP_CHAPTER.get(mid)
         events = evfn(meta, pts)
-        mp = map_json(m.w, m.h, m.tileset_id, m.data(), events, display_name=disp)
+        mp = map_json(m.w, m.h, m.tileset_id, m.data(), events, display_name=disp, note=m.note())
         dump('Map%03d.json' % mid, mp)
         infos.append({'id': mid, 'expanded': False, 'name': name, 'order': order, 'parentId': 0,
                       'scrollX': m.w * 24, 'scrollY': m.h * 24})
